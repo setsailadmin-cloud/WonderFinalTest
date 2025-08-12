@@ -153,8 +153,30 @@
         }
 
         .score-btn.active {
-            transform: scale(1.05);
-            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.3);
+            transform: scale(1.08);
+            box-shadow: 0 0 0 4px rgba(79, 172, 254, 0.6);
+            border: 3px solid #fff;
+            font-weight: 900;
+            position: relative;
+            z-index: 10;
+        }
+
+        .score-btn.active:after {
+            content: "✓";
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #28a745;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            border: 2px solid white;
         }
 
         .points-input {
@@ -239,6 +261,12 @@
             border-left: 4px solid #2196f3;
         }
 
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1.08); }
+        }
+
         @media (max-width: 768px) {
             .container {
                 margin: 10px;
@@ -283,10 +311,7 @@
                 <h2>📊 Current Score</h2>
                 <div class="score-display" id="currentScore">0 / 74</div>
                 <div class="grade-letter" id="gradeLetter">F (0.0%)</div>
-                <div>
-                    <button class="export-btn" onclick="exportGrades()">📄 Export Report</button>
-                    <button class="export-btn" onclick="resetGrading()" style="background: #dc3545;">🔄 Reset</button>
-                </div>
+
             </div>
 
             <!-- Multiple Choice Section -->
@@ -507,13 +532,25 @@
             currentScores[section][questionNum] = parseInt(points);
             updateTotalScore();
             
-            // Update button states
+            // Update button states with enhanced visual feedback
             if (buttonElement && buttonElement.closest) {
                 const questionDiv = buttonElement.closest('.question');
                 if (questionDiv) {
-                    questionDiv.querySelectorAll('.score-btn').forEach(btn => btn.classList.remove('active'));
+                    // Remove active state from all buttons in this question
+                    questionDiv.querySelectorAll('.score-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                        btn.style.transform = '';
+                    });
+                    
+                    // Add active state to clicked button with animation
                     if (buttonElement.classList.contains('score-btn')) {
                         buttonElement.classList.add('active');
+                        
+                        // Add a pulse animation
+                        buttonElement.style.animation = 'pulse 0.3s ease-in-out';
+                        setTimeout(() => {
+                            buttonElement.style.animation = '';
+                        }, 300);
                     }
                 }
             }
@@ -558,46 +595,18 @@
             const testDate = document.getElementById('testDate').value || new Date().toISOString().split('T')[0];
             const period = document.getElementById('period').value || '';
             
-            let report = `WONDER FINAL TEST - GRADE REPORT\n`;
-            report += `=====================================\n`;
-            report += `Student: ${studentName}\n`;
-            report += `Date: ${testDate}\n`;
-            report += `Period: ${period}\n`;
-            report += `=====================================\n\n`;
-            
-            // Multiple Choice
-            report += `MULTIPLE CHOICE (15 points possible)\n`;
+            // Calculate totals
             let mcTotal = 0;
-            Object.entries(currentScores.multipleChoice).forEach(([q, score]) => {
-                report += `Question ${q}: ${score}/1\n`;
-                mcTotal += score;
-            });
-            report += `Multiple Choice Total: ${mcTotal}/15\n\n`;
+            Object.values(currentScores.multipleChoice).forEach(score => mcTotal += score);
             
-            // Fill in the Blank
-            report += `FILL IN THE BLANK (9 points possible)\n`;
             let fbTotal = 0;
-            Object.entries(currentScores.fillBlank).forEach(([q, score]) => {
-                report += `Question ${q}: ${score}/1\n`;
-                fbTotal += score;
-            });
-            report += `Fill in the Blank Total: ${fbTotal}/9\n\n`;
+            Object.values(currentScores.fillBlank).forEach(score => fbTotal += score);
             
-            // Plot Sequencing
-            report += `PLOT SEQUENCING (10 points possible)\n`;
             const psTotal = currentScores.plotSequencing[1] || 0;
-            report += `Plot Sequencing Total: ${psTotal}/10\n\n`;
             
-            // Short Answer
-            report += `SHORT ANSWER (40 points possible)\n`;
             let saTotal = 0;
-            Object.entries(currentScores.shortAnswer).forEach(([q, score]) => {
-                report += `Question ${q}: ${score}/4\n`;
-                saTotal += score;
-            });
-            report += `Short Answer Total: ${saTotal}/40\n\n`;
+            Object.values(currentScores.shortAnswer).forEach(score => saTotal += score);
             
-            // Final Grade
             const grandTotal = mcTotal + fbTotal + psTotal + saTotal;
             const percentage = (grandTotal / 74) * 100;
             let letterGrade;
@@ -607,26 +616,93 @@
             else if (percentage >= 60) letterGrade = 'D';
             else letterGrade = 'F';
             
-            report += `FINAL GRADE: ${grandTotal}/74 (${percentage.toFixed(1)}%) - ${letterGrade}\n\n`;
+            // Create PDF using jsPDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
             
-            // Add comments
-            report += `COMMENTS:\n`;
+            // Header
+            doc.setFontSize(20);
+            doc.setFont(undefined, 'bold');
+            doc.text('WONDER FINAL TEST - GRADE REPORT', 20, 30);
+            
+            // Student info
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Student: ${studentName}`, 20, 50);
+            doc.text(`Date: ${testDate}`, 20, 60);
+            doc.text(`Period: ${period}`, 20, 70);
+            
+            // Draw line
+            doc.line(20, 80, 190, 80);
+            
+            let yPos = 100;
+            
+            // Multiple Choice
+            doc.setFont(undefined, 'bold');
+            doc.text('MULTIPLE CHOICE (15 points possible)', 20, yPos);
+            yPos += 10;
+            doc.setFont(undefined, 'normal');
+            Object.entries(currentScores.multipleChoice).forEach(([q, score]) => {
+                doc.text(`Question ${q}: ${score}/1`, 30, yPos);
+                yPos += 8;
+            });
+            doc.setFont(undefined, 'bold');
+            doc.text(`Multiple Choice Total: ${mcTotal}/15`, 20, yPos);
+            yPos += 20;
+            
+            // Fill in the Blank
+            doc.setFont(undefined, 'bold');
+            doc.text('FILL IN THE BLANK (9 points possible)', 20, yPos);
+            yPos += 10;
+            doc.setFont(undefined, 'normal');
+            Object.entries(currentScores.fillBlank).forEach(([q, score]) => {
+                doc.text(`Question ${q}: ${score}/1`, 30, yPos);
+                yPos += 8;
+            });
+            doc.setFont(undefined, 'bold');
+            doc.text(`Fill in the Blank Total: ${fbTotal}/9`, 20, yPos);
+            yPos += 20;
+            
+            // Plot Sequencing
+            doc.text(`PLOT SEQUENCING: ${psTotal}/10`, 20, yPos);
+            yPos += 20;
+            
+            // Short Answer
+            doc.text('SHORT ANSWER (40 points possible)', 20, yPos);
+            yPos += 10;
+            doc.setFont(undefined, 'normal');
+            Object.entries(currentScores.shortAnswer).forEach(([q, score]) => {
+                doc.text(`Question ${q}: ${score}/4`, 30, yPos);
+                yPos += 8;
+            });
+            doc.setFont(undefined, 'bold');
+            doc.text(`Short Answer Total: ${saTotal}/40`, 20, yPos);
+            yPos += 30;
+            
+            // Final Grade - highlighted box
+            doc.setFillColor(240, 240, 240);
+            doc.rect(15, yPos - 10, 180, 25, 'F');
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text(`FINAL GRADE: ${grandTotal}/74 (${percentage.toFixed(1)}%) - ${letterGrade}`, 20, yPos + 5);
+            
+            // Comments section
+            yPos += 40;
+            doc.setFontSize(12);
+            doc.text('COMMENTS:', 20, yPos);
+            yPos += 15;
+            doc.setFont(undefined, 'normal');
+            
             Object.entries(comments).forEach(([key, comment]) => {
                 if (comment.trim()) {
-                    report += `${key}: ${comment}\n`;
+                    const lines = doc.splitTextToSize(`${key}: ${comment}`, 170);
+                    doc.text(lines, 20, yPos);
+                    yPos += lines.length * 6 + 5;
                 }
             });
             
-            // Download the report
-            const blob = new Blob([report], { type: 'text/plain' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${studentName}_Wonder_Test_Report.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
+            // Save the PDF
+            doc.save(`${studentName}_Wonder_Test_Report.pdf`);
         }
 
         function resetGrading() {
@@ -655,5 +731,8 @@
         // Initialize when page loads
         window.addEventListener('load', initializeGrading);
     </script>
+    
+    <!-- jsPDF Library for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </body>
 </html>
