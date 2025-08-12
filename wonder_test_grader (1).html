@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wonder Final Test - Interactive Grading System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .student-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .student-info input {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin: 5px 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .student-info input:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            border-left: 5px solid #4facfe;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .question {
+            background: white;
+            margin: 15px 0;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s;
+        }
+
+        .question:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .question-number {
+            font-weight: bold;
+            color: #4facfe;
+            font-size: 1.1em;
+        }
+
+        .correct-answer {
+            background: #d4edda;
+            color: #155724;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+
+        .grading-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .score-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .score-btn.correct {
+            background: #28a745;
+            color: white;
+        }
+
+        .score-btn.incorrect {
+            background: #dc3545;
+            color: white;
+        }
+
+        .score-btn.partial {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .score-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .score-btn.active {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.3);
+        }
+
+        .points-input {
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            width: 80px;
+            text-align: center;
+        }
+
+        .comments-area {
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .scoring-summary {
+            position: sticky;
+            top: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .score-display {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .export-btn {
+            background: #28a745;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+
+        .export-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .grade-letter {
+            font-size: 1.5em;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.2);
+        }
+
+        .fill-blank-answer {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 5px 0;
+            border-left: 4px solid #ffc107;
+        }
+
+        .sequence-answer {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .sequence-item {
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 4px solid #2196f3;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .student-info input {
+                width: 100%;
+                margin: 5px 0;
+            }
+            
+            .grading-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .score-btn {
+                width: 100%;
+                margin: 2px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Wonder Final Test</h1>
+            <p>Interactive Grading System</p>
+        </div>
+
+        <div class="student-info">
+            <label>Student Name: <input type="text" id="studentName" placeholder="Enter student name"></label>
+            <label>Date: <input type="date" id="testDate"></label>
+            <label>Hour/Period: <input type="text" id="period" placeholder="Period"></label>
+        </div>
+
+        <div class="content">
+            <div class="scoring-summary">
+                <h2>📊 Current Score</h2>
+                <div class="score-display" id="currentScore">0 / 74</div>
+                <div class="grade-letter" id="gradeLetter">F (0.0%)</div>
+                <div>
+                    <button class="export-btn" onclick="exportGrades()">📄 Export Report</button>
+                    <button class="export-btn" onclick="resetGrading()" style="background: #dc3545;">🔄 Reset</button>
+                </div>
+            </div>
+
+            <!-- Multiple Choice Section -->
+            <div class="section">
+                <h2 class="section-title">📝 Multiple Choice (15 points)</h2>
+                <div id="multipleChoice">
+                    <!-- Questions will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Fill in the Blank Section -->
+            <div class="section">
+                <h2 class="section-title">✏️ Fill in the Blank (9 points)</h2>
+                <div id="fillBlank">
+                    <!-- Questions will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Plot Sequencing Section -->
+            <div class="section">
+                <h2 class="section-title">🔢 Plot Sequencing (10 points)</h2>
+                <div id="plotSequencing">
+                    <!-- Questions will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Short Answer Section -->
+            <div class="section">
+                <h2 class="section-title">📖 Short Answer (40 points)</h2>
+                <div id="shortAnswer">
+                    <!-- Questions will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Answer key data
+        const answerKey = {
+            multipleChoice: [
+                { q: 1, answer: 'b', text: "Auggie's parents see him as" },
+                { q: 2, answer: 'd', text: "When Auggie was born, his doctor" },
+                { q: 3, answer: 'd', text: "For the Halloween celebration at school, Auggie dresses up as" },
+                { q: 4, answer: 'c', text: "Why is the beginning of high school difficult for Via?" },
+                { q: 5, answer: 'c', text: "Why does Via tell us her children will 'never be born'?" },
+                { q: 6, answer: 'd', text: "Why does Summer sit with Auggie on the first day of school?" },
+                { q: 7, answer: 'c', text: "What secret does Summer not completely keep for Auggie?" },
+                { q: 8, answer: 'a', text: "Where does Jack first meet Auggie?" },
+                { q: 9, answer: 'c', text: "How does Julian's mother feel about Auggie?" },
+                { q: 10, answer: 'd', text: "What does Justin tell us happens to him when he is nervous?" },
+                { q: 11, answer: 'a', text: "What does Auggie mean when he talks about 'the war'?" },
+                { q: 12, answer: 'd', text: "How do people react to Auggie getting hearing aids?" },
+                { q: 13, answer: 'a', text: "Why does Miranda pretend to be sick on the opening night of Our Town?" },
+                { q: 14, answer: 'c', text: "Why doesn't Auggie want to press charges against Eddie?" },
+                { q: 15, answer: 'd', text: "At the end of the book, what medal does Auggie win?" }
+            ],
+            fillBlank: [
+                { q: 1, answer: 'empathy/noble', text: "Summer shows she has great _____ when she sits with Auggie at lunch. This gesture is very _____, because she knows her friends could make fun of her." },
+                { q: 2, answer: 'mutation/random', text: "Auggie was born with a genetic _____ that is not completely _____." },
+                { q: 3, answer: 'petrified/plague', text: "When Auggie first goes to school, he is _____. Things don't get better when his classmates begin to treat him as though he has the _____." },
+                { q: 4, answer: 'sermonizer/commencement', text: "Mr. Tushman is very much a(n) _____. We learn this at the Beecher Prep _____." },
+                { q: 5, answer: 'understudy', text: "Via is the _____ for Miranda in the Our Town play." },
+                { q: 6, answer: 'slaughter', text: "Auggie's parents worry that sending him to school will be like 'sending a lamb to _____'." },
+                { q: 7, answer: 'mocking/regretted/scrambling', text: "After Jack was caught _____ Auggie, he _____ his choice. He finds himself _____ to become Auggie's friend again." },
+                { q: 8, answer: 'reception', text: "After graduation, Auggie's whole family attends a(n) _____." },
+                { q: 9, answer: 'flattering', text: "When Auggie's mother calls him a 'wonder,' she is _____ him." }
+            ],
+            plotSequencing: [
+                { item: 'g', order: 1, text: 'Auggie begins attending school' },
+                { item: 'c', order: 2, text: 'Auggie and Summer become friends' },
+                { item: 'e', order: 3, text: 'Auggie stops speaking to Jack' },
+                { item: 'b', order: 4, text: 'Auggie and Jack make up' },
+                { item: 'd', order: 5, text: 'Via starts dating Justin' },
+                { item: 'i', order: 6, text: 'Auggie gets hearing aids' },
+                { item: 'h', order: 7, text: 'Daisy dies' },
+                { item: 'f', order: 8, text: 'Miranda and Via get their friendship back' },
+                { item: 'j', order: 9, text: 'Beecher Prep visits a nature preserve' },
+                { item: 'a', order: 10, text: 'Auggie graduates fifth grade' }
+            ],
+            shortAnswer: [
+                { q: 1, answer: "Most either won't speak to him or seem frightened by him. A few, like Summer, are kind.", text: "How do Auggie's classmates react to him when he first begins school at Beecher Prep?" },
+                { q: 2, answer: "She has always loved and felt very protective of him. Occasionally, she has resented him, but not often.", text: "How has Via always felt about her younger brother?" },
+                { q: 3, answer: "At first she is very sad, but eventually she finds new friends.", text: "How does Via react to the way her friends treat her when high school begins?" },
+                { q: 4, answer: "Summer consistently shows herself to be kind, empathetic, and caring.", text: "What kind of person does Summer show herself to be?" },
+                { q: 5, answer: "At first Jack is reluctant to become Auggie's friend, but over time he learns that Auggie is probably the best friend he has ever had.", text: "How does Jack's attitude about Auggie change over time?" },
+                { q: 6, answer: "Julian feels that Auggie is a bad influence on Jack and that Jack will only stop speaking to Auggie if everyone else stops speaking to Jack.", text: "Why does Julian encourage people to stop speaking to Jack?" },
+                { q: 7, answer: "Justin stands up for Jack at the bus stop by telling Jack's classmates to leave him alone.", text: "How does Justin try to support Jack?" },
+                { q: 8, answer: "Miranda pretends to be sick so that Via can play the lead role in Our Town when Via's family attends the play.", text: "What does Miranda do that ends up restoring her friendship with Via?" },
+                { q: 9, answer: "The nature reserve incident causes Auggie's classmates to see him as one of them, and after that trip, his differences become something the majority of the school sees as positive, not negative.", text: "How does the trip to the nature reserve change Auggie's relationship with his classmates?" },
+                { q: 10, answer: "'Hopeful,' 'happy,' and words of that nature best describe the tone at the end of Wonder.", text: "What words best describe the tone of the end of the novel?" }
+            ]
+        };
+
+        let currentScores = {
+            multipleChoice: {},
+            fillBlank: {},
+            plotSequencing: {},
+            shortAnswer: {}
+        };
+
+        let comments = {};
+
+        function initializeGrading() {
+            generateMultipleChoice();
+            generateFillBlank();
+            generatePlotSequencing();
+            generateShortAnswer();
+            updateTotalScore();
+            
+            // Set today's date
+            document.getElementById('testDate').value = new Date().toISOString().split('T')[0];
+        }
+
+        function generateMultipleChoice() {
+            const container = document.getElementById('multipleChoice');
+            answerKey.multipleChoice.forEach(item => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question';
+                questionDiv.innerHTML = `
+                    <div class="question-header">
+                        <span class="question-number">Question ${item.q}.</span>
+                        <span class="correct-answer">Correct: ${item.answer.toUpperCase()}</span>
+                    </div>
+                    <p>${item.text}</p>
+                    <div class="grading-controls">
+                        <button class="score-btn correct" onclick="scoreQuestion('multipleChoice', ${item.q}, 1, this)">✓ Correct (1 pt)</button>
+                        <button class="score-btn incorrect" onclick="scoreQuestion('multipleChoice', ${item.q}, 0, this)">✗ Incorrect (0 pts)</button>
+                        <textarea class="comments-area" placeholder="Comments for student..." oninput="saveComment('mc${item.q}', this.value)"></textarea>
+                    </div>
+                `;
+                container.appendChild(questionDiv);
+            });
+        }
+
+        function generateFillBlank() {
+            const container = document.getElementById('fillBlank');
+            answerKey.fillBlank.forEach(item => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question';
+                questionDiv.innerHTML = `
+                    <div class="question-header">
+                        <span class="question-number">Question ${item.q}.</span>
+                    </div>
+                    <p>${item.text}</p>
+                    <div class="fill-blank-answer">
+                        <strong>Answer:</strong> ${item.answer}
+                    </div>
+                    <div class="grading-controls">
+                        <button class="score-btn correct" onclick="scoreQuestion('fillBlank', ${item.q}, 1, this)">✓ Correct (1 pt)</button>
+                        <button class="score-btn incorrect" onclick="scoreQuestion('fillBlank', ${item.q}, 0, this)">✗ Incorrect (0 pts)</button>
+                        <textarea class="comments-area" placeholder="Comments for student..." oninput="saveComment('fb${item.q}', this.value)"></textarea>
+                    </div>
+                `;
+                container.appendChild(questionDiv);
+            });
+        }
+
+        function generatePlotSequencing() {
+            const container = document.getElementById('plotSequencing');
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'question';
+            
+            let sequenceHTML = `
+                <div class="question-header">
+                    <span class="question-number">Plot Sequencing (10 points total)</span>
+                </div>
+                <p>Correct sequence order:</p>
+                <div class="sequence-answer">
+            `;
+            
+            answerKey.plotSequencing.forEach(item => {
+                sequenceHTML += `
+                    <div class="sequence-item">
+                        <strong>${item.order}.</strong> ${item.text}
+                    </div>
+                `;
+            });
+            
+            sequenceHTML += `
+                </div>
+                <div class="grading-controls">
+                    <label>Points earned: <input type="number" class="points-input" min="0" max="10" value="0" onchange="scoreQuestion('plotSequencing', 1, this.value, this)"></label>
+                    <textarea class="comments-area" placeholder="Comments for student..." oninput="saveComment('ps1', this.value)"></textarea>
+                </div>
+            `;
+            
+            questionDiv.innerHTML = sequenceHTML;
+            container.appendChild(questionDiv);
+        }
+
+        function generateShortAnswer() {
+            const container = document.getElementById('shortAnswer');
+            answerKey.shortAnswer.forEach(item => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question';
+                questionDiv.innerHTML = `
+                    <div class="question-header">
+                        <span class="question-number">Question ${item.q}. (4 points)</span>
+                    </div>
+                    <p><strong>${item.text}</strong></p>
+                    <div class="fill-blank-answer">
+                        <strong>Sample Answer:</strong> ${item.answer}
+                    </div>
+                    <div class="grading-controls">
+                        <button class="score-btn correct" onclick="scoreQuestion('shortAnswer', ${item.q}, 4, this)">✓ Excellent (4 pts)</button>
+                        <button class="score-btn partial" onclick="scoreQuestion('shortAnswer', ${item.q}, 3, this)">◐ Good (3 pts)</button>
+                        <button class="score-btn partial" onclick="scoreQuestion('shortAnswer', ${item.q}, 2, this)">◑ Fair (2 pts)</button>
+                        <button class="score-btn partial" onclick="scoreQuestion('shortAnswer', ${item.q}, 1, this)">◒ Poor (1 pt)</button>
+                        <button class="score-btn incorrect" onclick="scoreQuestion('shortAnswer', ${item.q}, 0, this)">✗ No Answer (0 pts)</button>
+                        <textarea class="comments-area" placeholder="Comments for student..." oninput="saveComment('sa${item.q}', this.value)"></textarea>
+                    </div>
+                `;
+                container.appendChild(questionDiv);
+            });
+        }
+
+        function scoreQuestion(section, questionNum, points, buttonElement) {
+            currentScores[section][questionNum] = parseInt(points);
+            updateTotalScore();
+            
+            // Update button states
+            if (buttonElement && buttonElement.closest) {
+                const questionDiv = buttonElement.closest('.question');
+                if (questionDiv) {
+                    questionDiv.querySelectorAll('.score-btn').forEach(btn => btn.classList.remove('active'));
+                    if (buttonElement.classList.contains('score-btn')) {
+                        buttonElement.classList.add('active');
+                    }
+                }
+            }
+        }
+
+        function updateTotalScore() {
+            let total = 0;
+            
+            // Multiple Choice (15 points)
+            Object.values(currentScores.multipleChoice).forEach(score => total += score);
+            
+            // Fill in the Blank (9 points)
+            Object.values(currentScores.fillBlank).forEach(score => total += score);
+            
+            // Plot Sequencing (10 points)
+            Object.values(currentScores.plotSequencing).forEach(score => total += score);
+            
+            // Short Answer (40 points)
+            Object.values(currentScores.shortAnswer).forEach(score => total += score);
+            
+            // Update display (total 74 points without essay)
+            document.getElementById('currentScore').textContent = `${total} / 74`;
+            
+            // Calculate letter grade
+            const percentage = (total / 74) * 100;
+            let letterGrade;
+            if (percentage >= 90) letterGrade = 'A';
+            else if (percentage >= 80) letterGrade = 'B';
+            else if (percentage >= 70) letterGrade = 'C';
+            else if (percentage >= 60) letterGrade = 'D';
+            else letterGrade = 'F';
+            
+            document.getElementById('gradeLetter').textContent = `${letterGrade} (${percentage.toFixed(1)}%)`;
+        }
+
+        function saveComment(key, comment) {
+            comments[key] = comment;
+        }
+
+        function exportGrades() {
+            const studentName = document.getElementById('studentName').value || 'Student';
+            const testDate = document.getElementById('testDate').value || new Date().toISOString().split('T')[0];
+            const period = document.getElementById('period').value || '';
+            
+            let report = `WONDER FINAL TEST - GRADE REPORT\n`;
+            report += `=====================================\n`;
+            report += `Student: ${studentName}\n`;
+            report += `Date: ${testDate}\n`;
+            report += `Period: ${period}\n`;
+            report += `=====================================\n\n`;
+            
+            // Multiple Choice
+            report += `MULTIPLE CHOICE (15 points possible)\n`;
+            let mcTotal = 0;
+            Object.entries(currentScores.multipleChoice).forEach(([q, score]) => {
+                report += `Question ${q}: ${score}/1\n`;
+                mcTotal += score;
+            });
+            report += `Multiple Choice Total: ${mcTotal}/15\n\n`;
+            
+            // Fill in the Blank
+            report += `FILL IN THE BLANK (9 points possible)\n`;
+            let fbTotal = 0;
+            Object.entries(currentScores.fillBlank).forEach(([q, score]) => {
+                report += `Question ${q}: ${score}/1\n`;
+                fbTotal += score;
+            });
+            report += `Fill in the Blank Total: ${fbTotal}/9\n\n`;
+            
+            // Plot Sequencing
+            report += `PLOT SEQUENCING (10 points possible)\n`;
+            const psTotal = currentScores.plotSequencing[1] || 0;
+            report += `Plot Sequencing Total: ${psTotal}/10\n\n`;
+            
+            // Short Answer
+            report += `SHORT ANSWER (40 points possible)\n`;
+            let saTotal = 0;
+            Object.entries(currentScores.shortAnswer).forEach(([q, score]) => {
+                report += `Question ${q}: ${score}/4\n`;
+                saTotal += score;
+            });
+            report += `Short Answer Total: ${saTotal}/40\n\n`;
+            
+            // Final Grade
+            const grandTotal = mcTotal + fbTotal + psTotal + saTotal;
+            const percentage = (grandTotal / 74) * 100;
+            let letterGrade;
+            if (percentage >= 90) letterGrade = 'A';
+            else if (percentage >= 80) letterGrade = 'B';
+            else if (percentage >= 70) letterGrade = 'C';
+            else if (percentage >= 60) letterGrade = 'D';
+            else letterGrade = 'F';
+            
+            report += `FINAL GRADE: ${grandTotal}/74 (${percentage.toFixed(1)}%) - ${letterGrade}\n\n`;
+            
+            // Add comments
+            report += `COMMENTS:\n`;
+            Object.entries(comments).forEach(([key, comment]) => {
+                if (comment.trim()) {
+                    report += `${key}: ${comment}\n`;
+                }
+            });
+            
+            // Download the report
+            const blob = new Blob([report], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${studentName}_Wonder_Test_Report.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        function resetGrading() {
+            if (confirm('Are you sure you want to reset all scores? This cannot be undone.')) {
+                currentScores = {
+                    multipleChoice: {},
+                    fillBlank: {},
+                    plotSequencing: {},
+                    shortAnswer: {}
+                };
+                comments = {};
+                
+                // Clear all active button states
+                document.querySelectorAll('.score-btn').forEach(btn => btn.classList.remove('active'));
+                
+                // Clear all text areas
+                document.querySelectorAll('.comments-area').forEach(textarea => textarea.value = '');
+                
+                // Clear points inputs
+                document.querySelectorAll('.points-input').forEach(input => input.value = 0);
+                
+                updateTotalScore();
+            }
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', initializeGrading);
+    </script>
+</body>
+</html>
